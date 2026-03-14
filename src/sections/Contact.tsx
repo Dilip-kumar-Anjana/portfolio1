@@ -84,15 +84,27 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
+      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+
+      // Check if EmailJS is properly configured
+      if (!publicKey || !serviceId || !templateId ||
+          publicKey === 'your_public_key_here' ||
+          serviceId === 'your_service_id_here' ||
+          templateId === 'your_template_id_here') {
+        throw new Error('EmailJS is not configured. Please set up your EmailJS credentials in Vercel environment variables.');
+      }
+
       // Initialize EmailJS with your public key
-      emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "your_public_key_here");
-      
+      emailjs.init(publicKey);
+
       // Send email
       const result = await emailjs.send(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID || "your_service_id_here",
-        import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "your_template_id_here",
+        serviceId,
+        templateId,
         {
           from_name: formState.name,
           from_email: formState.email,
@@ -101,16 +113,20 @@ export default function Contact() {
           to_email: 'dileepanjana9@gmail.com',
         }
       );
-      
+
       console.log('Email sent successfully:', result);
       setIsSubmitted(true);
       setFormState({ name: '', email: '', subject: '', message: '' });
-      
+
       // Reset success message after 5 seconds
       setTimeout(() => setIsSubmitted(false), 5000);
     } catch (error) {
       console.error('Failed to send email:', error);
-      alert('Failed to send message. Please try again or contact me directly.');
+      if (error instanceof Error && error.message.includes('EmailJS is not configured')) {
+        alert('Email service is not configured yet. Please contact the site owner directly at dileepanjana9@gmail.com');
+      } else {
+        alert('Failed to send message. Please try again or contact me directly at dileepanjana9@gmail.com');
+      }
     } finally {
       setIsSubmitting(false);
     }
